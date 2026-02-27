@@ -1,4 +1,5 @@
-const BUNQ_API_BASE = "https://api.bunq.com/v1";
+const BUNQ_API_HOST = "https://api.bunq.com";
+const BUNQ_API_BASE = `${BUNQ_API_HOST}/v1`;
 const SESSION_TTL_SECONDS = 25 * 60;
 const KV_KEY_KEYPAIR = "bunq:keypair";
 const KV_KEY_INSTALLATION = "bunq:installation";
@@ -293,7 +294,7 @@ export async function forwardRequest(
   sessionToken: string
 ): Promise<Response> {
   const url = new URL(request.url);
-  const bunqUrl = `${BUNQ_API_BASE}${url.pathname}${url.search}`;
+  const bunqUrl = `${BUNQ_API_HOST}${url.pathname}${url.search}`;
 
   const headers = new Headers({
     "Cache-Control": "no-cache",
