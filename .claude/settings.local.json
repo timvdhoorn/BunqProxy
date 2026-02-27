@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.bunq.com)",
+      "WebSearch",
+      "WebFetch(domain:doc.bunq.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
