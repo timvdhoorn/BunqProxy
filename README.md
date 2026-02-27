@@ -130,6 +130,25 @@ View structured logs:
 bun run tail
 ```
 
+## Security
+
+### IP Restrictions
+
+In production, it is strongly recommended to restrict access to specific IP addresses using the `ALLOWED_IPS` environment variable. Without it, anyone with a valid Bearer token can access the proxy.
+
+```bash
+npx wrangler secret put ALLOWED_IPS
+# Enter a comma-separated list of IPs, e.g.: 203.0.113.10,198.51.100.22
+```
+
+The proxy uses the `CF-Connecting-IP` header (standard Cloudflare header) to determine the client's IP address. If `ALLOWED_IPS` is not set, all IPs are allowed (backwards compatible).
+
+For local development, add `ALLOWED_IPS` to your `.dev.vars` file:
+
+```
+ALLOWED_IPS=127.0.0.1
+```
+
 ## How It Works
 
 ### Request flow

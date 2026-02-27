@@ -6,6 +6,7 @@ export interface Env {
   PROXY_TOKEN: string;
   BUNQ_API_KEY: string;
   BUNQ_SESSION: KVNamespace;
+  ALLOWED_IPS?: string;
 }
 
 const CORS_HEADERS: Record<string, string> = {
@@ -37,6 +38,16 @@ function validateAuth(request: Request, proxyToken: string): boolean {
   return scheme === "Bearer" && token === proxyToken;
 }
 
+function validateIP(request: Request, allowedIPs?: string): boolean {
+  if (!allowedIPs) return true;
+
+  const clientIP = request.headers.get("CF-Connecting-IP");
+  if (!clientIP) return false;
+
+  const allowlist = allowedIPs.split(",").map((ip) => ip.trim());
+  return allowlist.includes(clientIP);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
@@ -45,6 +56,10 @@ export default {
 
     if (!validateAuth(request, env.PROXY_TOKEN)) {
       return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
+    if (!validateIP(request, env.ALLOWED_IPS)) {
+      return jsonResponse({ error: "Forbidden", reason: "IP not allowed" }, 403);
     }
 
     const url = new URL(request.url);
