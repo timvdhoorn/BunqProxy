@@ -59,7 +59,14 @@ export default {
     }
 
     if (!validateIP(request, env.ALLOWED_IPS)) {
-      return jsonResponse({ error: "Forbidden", reason: "IP not allowed" }, 403);
+      return jsonResponse(
+        {
+          error: "Forbidden",
+          reason: "IP not allowed",
+          ip: request.headers.get("CF-Connecting-IP"),
+        },
+        403
+      );
     }
 
     const url = new URL(request.url);

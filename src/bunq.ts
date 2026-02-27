@@ -3,6 +3,7 @@ const BUNQ_API_BASE = `${BUNQ_API_HOST}/v1`;
 const SESSION_TTL_SECONDS = 25 * 60;
 const KV_KEY_KEYPAIR = "bunq:keypair";
 const KV_KEY_INSTALLATION = "bunq:installation";
+const KV_KEY_DEVICE = "bunq:device";
 const KV_KEY_SESSION = "bunq:session";
 
 interface StoredKeyPair {
@@ -200,11 +201,15 @@ async function createInstallation(
   return data;
 }
 
-async function createDeviceServer(
+async function ensureDeviceServer(
+  kv: KVNamespace,
   apiKey: string,
   installationToken: string,
   privateKey: CryptoKey
 ): Promise<void> {
+  const cached = await kv.get(KV_KEY_DEVICE);
+  if (cached) return;
+
   const response = await bunqPost(
     "/device-server",
     { description: "BunqProxy Cloudflare Worker", secret: apiKey, permitted_ips: ["*"] },
@@ -212,10 +217,21 @@ async function createDeviceServer(
     privateKey
   );
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Device-server failed (${response.status}): ${text}`);
+  if (response.ok) {
+    await kv.put(KV_KEY_DEVICE, "registered");
+    return;
   }
+
+  const text = await response.text();
+  const alreadyExists =
+    text.includes("already") || text.includes("Device") || response.status === 409;
+
+  if (alreadyExists) {
+    await kv.put(KV_KEY_DEVICE, "registered");
+    return;
+  }
+
+  throw new Error(`Device-server failed (${response.status}): ${text}`);
 }
 
 async function createSessionServer(
@@ -269,7 +285,7 @@ export async function getSessionToken(
 
   const installation = await createInstallation(kv, publicKeyPem);
 
-  await createDeviceServer(apiKey, installation.token, privateKey);
+  await ensureDeviceServer(kv, apiKey, installation.token, privateKey);
 
   const sessionToken = await createSessionServer(
     apiKey,

@@ -42,7 +42,9 @@ All paths are relative to the proxy URL. Replace `{userID}` and `{accountID}` wi
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /v1/user/{userID}/monetary-account` | List all accounts (checking, savings, joint) |
+| `GET /v1/user/{userID}/monetary-account` | List all accounts (may exclude primary bank accounts) |
+| `GET /v1/user/{userID}/monetary-account-bank` | List bank accounts including Main (use this for checking accounts) |
+| `GET /v1/user/{userID}/monetary-account-savings` | List savings accounts |
 | `GET /v1/user/{userID}/monetary-account/{accountID}` | Get single account details + balance |
 
 ### Payments & Transactions
@@ -119,8 +121,14 @@ curl -H "Authorization: Bearer $BUNQ_PROXY_TOKEN" \
   "$BUNQ_PROXY_URL/v1/user/{userID}/monetary-account/{accountID}/payment?count=50&older_id=12345"
 ```
 
+## Tips
+
+- **Use `/monetary-account-bank`** as default for listing accounts — `/monetary-account` may exclude primary bank accounts
+- **Filter on `status: ACTIVE`** — responses often include old cancelled accounts
+
 ## Typical Workflow
 
 1. `GET /v1/user` → extract `userID` from response
-2. `GET /v1/user/{userID}/monetary-account` → list accounts, get `accountID`s
-3. `GET /v1/user/{userID}/monetary-account/{accountID}/payment?count=50` → fetch transactions
+2. `GET /v1/user/{userID}/monetary-account-bank` → list bank accounts (including Main), get `accountID`s
+3. Filter accounts where `status === "ACTIVE"`
+4. `GET /v1/user/{userID}/monetary-account/{accountID}/payment?count=50` → fetch transactions
